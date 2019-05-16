@@ -1,5 +1,8 @@
 package wots
 
+/*
+ * This package supports n = 256-bits (32B) or n = 512=bits (64B), hence 32B or 64B message digests are signed
+ */
 import (
 	"crypto/sha256"
 	"crypto/sha512"
@@ -7,9 +10,9 @@ import (
 	"math"
 )
 
-// Parameters hold the parameters required to compute signatures with the WOTS-T scheme
-type Parameters struct {
-	n       int // Security parameter in BYTES
+// SchemeParameters holds the parameters defining the WOTS scheme instance
+type SchemeParameters struct {
+	n       int // Security parameter in bytes
 	w       int // Winternitz parameter
 	logw    int // Winternitz parameter log2
 	length1 int // Length paramter 1
@@ -19,9 +22,9 @@ type Parameters struct {
 }
 
 // InitParameters initializes the WOTS-T paramters
-func InitParameters(w int, n int, msg string) (params Parameters, err error) {
-	if (w & (w - 1)) != 0 {
-		return params, errors.New("w should be of power 2")
+func InitParameters(w int, n int) (params SchemeParameters, err error) {
+	if (w != 0) && (w&(w-1)) != 0 {
+		return params, errors.New("w should be of power 2 and larger than 0")
 	}
 	if n != 32 && n != 64 {
 		return params, errors.New("n should be 32 or 64 bytes security")
@@ -29,35 +32,25 @@ func InitParameters(w int, n int, msg string) (params Parameters, err error) {
 	params.n = n
 	params.w = w
 	params.logw = int(math.Log2(float64(w)))
-	params.length1 = int(math.Ceil(float64(8 * params.n / params.logw)))
+	params.length1 = int(math.Ceil(float64((n * 8) / params.logw)))
 	params.length2 = int(math.Floor(math.Log2(float64(params.length1*(params.w-1))) /
 		float64(params.logw)))
 	params.length = params.length1 + params.length2
 
-	return params, nil
+	return params, err
 }
 
-func KeyGen(seed []byte, params Parameters) {
-	sk := expandKey(seed, params)
-
-}
-
-func expandKey(key []byte, params Parameters) (expandedKey []byte) {
+//KeyGen genreates a Winternitz One Time Signature Keypair (sk,pk)
+func KeyGen(params SchemeParameters) (sk [][]byte, pk [][]byte) {
+	sk = make([][]byte, params.length)
 	for i := 0; i < params.length; i++ {
-		counter := make([]byte, params.n)
-		for j := 0; i < params.n; j++ {
-			counter = append(counter, byte(i))
-		}
-		expandedKey = append(expandedKey, prf(counter, key, params.n)...)
-	}
-	return
-}
+		for j := 0; j < params.n; j++ {
 
-func prf(in []byte, key []byte, n int) (out []byte) {
-	var buffer []byte
-	buffer = append(buffer, key...)
-	buffer = append(buffer, in...)
-	return hash(buffer, n)
+		}
+
+	}
+
+	return
 }
 
 func hash(in []byte, n int) []byte {
