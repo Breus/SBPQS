@@ -1,68 +1,65 @@
 package wots
 
-/*
- * This package supports n = 256-bits (32B) or n = 512=bits (64B), hence 32B or 64B message digests are signed
- */
 import (
+	"crypto/rand"
 	"crypto/sha256"
 	"crypto/sha512"
 	"errors"
 	"math"
 )
 
-// SchemeParameters holds the parameters defining the WOTS scheme instance
-type SchemeParameters struct {
+//Scheme consists of the parameters for the scheme
+type Scheme struct {
 	n       int // Security parameter in bytes
 	w       int // Winternitz parameter
 	logw    int // Winternitz parameter log2
 	length1 int // Length paramter 1
 	length2 int // Length paramter 2
 	length  int // Length paramter (1+2)
-
 }
 
-// InitParameters initializes the WOTS-T paramters
-func InitParameters(w int, n int) (params SchemeParameters, err error) {
+// InitScheme initializes the scheme parameters
+func InitScheme(n int, w int) (scheme *Scheme, err error) {
 	if (w != 0) && (w&(w-1)) != 0 {
-		return params, errors.New("w should be of power 2 and larger than 0")
+		return nil, errors.New("w should be of power 2 and larger than 0")
 	}
 	if n != 32 && n != 64 {
-		return params, errors.New("n should be 32 or 64 bytes security")
+		return nil, errors.New("The scheme supports only n = 32, or n = 64")
 	}
-	params.n = n
-	params.w = w
-	params.logw = int(math.Log2(float64(w)))
-	params.length1 = int(math.Ceil(float64((n * 8) / params.logw)))
-	params.length2 = int(math.Floor(math.Log2(float64(params.length1*(params.w-1))) /
-		float64(params.logw)))
-	params.length = params.length1 + params.length2
+	scheme.n = n
+	scheme.w = w
+	scheme.logw = int(math.Log2(float64(w)))
+	scheme.length1 = int(math.Ceil(float64((n * 8) / scheme.logw)))
+	scheme.length2 = int(math.Floor(math.Log2(float64(scheme.length1*(scheme.w-1))) /
+		float64(scheme.logw)))
+	scheme.length = scheme.length1 + scheme.length2
 
-	return params, err
+	return scheme, err
 }
 
-//KeyGen genreates a Winternitz One Time Signature Keypair (sk,pk)
-func KeyGen(params SchemeParameters) (sk [][]byte, pk [][]byte) {
-	sk = make([][]byte, params.length)
-	for i := 0; i < params.length; i++ {
-		for j := 0; j < params.n; j++ {
-
-		}
-
-	}
-
+//generateSeed generates a n-byte private seed using the golang random function
+func (s *Scheme) generateSeed() (seed []byte, err error) {
+	_, err = rand.Read(seed[0:s.n])
 	return
 }
 
-func hash(in []byte, n int) []byte {
-	switch n {
+//expandKey expands a random n-byte seed to a n*length signing key
+func (s *Scheme) expandKey(seed []byte) (expandedKey []byte) {
+	return
+}
+
+//genVerKey genenerates the corresponding verification key
+
+//hash generates a n-byte digest of the input
+func (s *Scheme) hash(input []byte) (digest []byte, err error) {
+	switch s.n {
 	case 32:
-		checksum := sha256.Sum256(in)
-		return checksum[:]
+		digest := sha256.Sum256(input)
+		return digest[:], nil
 	case 64:
-		checksum := sha512.Sum512(in)
-		return checksum[:]
+		digest := sha512.Sum512(input)
+		return digest[:], nil
 	default:
-		checksum := sha256.Sum256(in)
-		return checksum[:]
+		return nil, errors.New("The scheme supports either n = 32 or n = 64")
 	}
 }
