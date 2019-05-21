@@ -1,2 +1,2 @@
-# XMSS-T
-Attempt to Implement XMSS-T in go
+# SBPQS
+Implementation of Breus' hash-based signature aimed at distributed ledger technology (DLT) systems with selective transaction broadcasting.
